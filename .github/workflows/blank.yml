@@ -1,4 +1,4 @@
-name: Build and Release Darling (Static)
+name: Build and Release Darling
 
 on:
   push:
@@ -11,39 +11,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout workflow repo
         uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential clang bison flex cmake git \
+            build-essential clang bison flex git cmake \
             libfuse-dev pkg-config libx11-dev libxcursor-dev \
             libxrandr-dev libxi-dev libxext-dev libxtst-dev \
             libegl1-mesa-dev libfontconfig1-dev libbsd-dev \
             libcap-dev musl-tools
 
+      - name: Clone Darling
+        run: |
+          git clone --recurse-submodules https://github.com/darlinghq/darling.git
+
+      # Dynamic build
+      - name: Build Darling (Dynamic)
+        run: |
+          cd darling
+          ./scripts/build.sh --release
+          tar czf darling-amd64-dynamic.tar.gz build/bin/*
+          mv darling-amd64-dynamic.tar.gz $GITHUB_WORKSPACE/
+
+      # Static build
       - name: Build Darling (Static)
         run: |
-          git submodule update --init --recursive
-          mkdir -p build
-          cd build
-          # Build static binaries
-          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS="-static"
-          make -j$(nproc)
-
-      - name: Package binaries
-        run: |
-          cd build
-          tar czf darling-amd64-static.tar.gz bin/*
+          cd darling
+          mkdir -p build-static
+          cd build-static
+          # Force musl-gcc and static linking
+          CC=musl-gcc CXX=musl-g++ LDFLAGS="-static" ../scripts/build.sh --release
+          tar czf darling-amd64-static.tar.gz build/bin/*
           mv darling-amd64-static.tar.gz $GITHUB_WORKSPACE/
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: darling-amd64-static
-          path: darling-amd64-static.tar.gz
+          name: darling-binaries
+          path: |
+            darling-amd64-dynamic.tar.gz
+            darling-amd64-static.tar.gz
 
   release:
     needs: build
