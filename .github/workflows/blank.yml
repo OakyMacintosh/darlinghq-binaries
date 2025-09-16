@@ -3,7 +3,7 @@ name: Build and Release Darling
 on:
   push:
     tags:
-      - "v*.*.*" # Runs only when a version tag is pushed
+      - "v*.*.*" # Trigger only on version tags like v0.2.0
   workflow_dispatch:
 
 jobs:
@@ -26,18 +26,18 @@ jobs:
 
       - name: Configure build
         run: |
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cd darling
+          mkdir -p build
+          cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
-          cd build
+          cd darling/build
           make -j$(nproc)
 
       - name: Package binaries
         run: |
-          cd build
+          cd darling/build
           tar czf darling-amd64.tar.gz bin/*
           mv darling-amd64.tar.gz $GITHUB_WORKSPACE/
 
