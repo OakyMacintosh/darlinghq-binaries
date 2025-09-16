@@ -3,7 +3,7 @@ name: Build and Release Darling
 on:
   push:
     tags:
-      - "v*.*.*" # Trigger only on version tags like v0.2.0
+      - "v*.*.*" # Trigger on version tags like v0.2.0
   workflow_dispatch:
 
 jobs:
@@ -18,21 +18,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential cmake git clang bison flex \
-            libfuse-dev pkg-config libx11-dev libxcursor-dev \
-            libxrandr-dev libxi-dev libxext-dev libxtst-dev \
-            libegl1-mesa-dev libfontconfig1-dev libbsd-dev \
-            libcap-dev
+            build-essential clang bison flex \
+            cmake git libfuse-dev pkg-config \
+            libx11-dev libxcursor-dev libxrandr-dev \
+            libxi-dev libxext-dev libxtst-dev \
+            libegl1-mesa-dev libfontconfig1-dev \
+            libbsd-dev libcap-dev
 
-      - name: Configure build
+      - name: Build Darling
         run: |
-          mkdir build
+          # Ensure repo is up-to-date
+          git submodule update --init --recursive
+          # Create a build directory
+          mkdir -p build
           cd build
-          cmake .. -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: |
-          cd build
+          # Run Darling's official CMake build
+          cmake ..
           make -j$(nproc)
 
       - name: Package binaries
@@ -56,7 +57,7 @@ jobs:
         with:
           path: ./artifacts
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
