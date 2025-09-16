@@ -1,0 +1,64 @@
+name: Build and Release Darling
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # Runs only when a version tag is pushed
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake git clang bison flex \
+            libfuse-dev pkg-config libx11-dev libxcursor-dev \
+            libxrandr-dev libxi-dev libxext-dev libxtst-dev \
+            libegl1-mesa-dev libfontconfig1-dev libbsd-dev \
+            libcap-dev
+
+      - name: Configure build
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+
+      - name: Package binaries
+        run: |
+          cd build
+          tar czf darling-amd64.tar.gz bin/*
+          mv darling-amd64.tar.gz $GITHUB_WORKSPACE/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: darling-amd64
+          path: darling-amd64.tar.gz
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
