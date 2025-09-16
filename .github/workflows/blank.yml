@@ -33,7 +33,8 @@ jobs:
         run: |
           cd darling
           mkdir build && cd build
-          cmake ..
+          cmake -DTARGET_i386=OFF -DJSC_UNIFIED_BUILD=ON ..
+          make -j4
           cd ..
           tar cxf darling-amd64-dynamic.tar.gz build/*
           mv darling-amd64-dynamic.tar.gz $GITHUB_WORKSPACE/
