@@ -1,9 +1,9 @@
-name: Build and Release Darling
+name: Build and Release Darling (Static)
 
 on:
   push:
     tags:
-      - "v*.*.*" # Trigger on version tags like v0.2.0
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -18,35 +18,32 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential clang bison flex \
-            cmake git libfuse-dev pkg-config \
-            libx11-dev libxcursor-dev libxrandr-dev \
-            libxi-dev libxext-dev libxtst-dev \
-            libegl1-mesa-dev libfontconfig1-dev \
-            libbsd-dev libcap-dev
+            build-essential clang bison flex cmake git \
+            libfuse-dev pkg-config libx11-dev libxcursor-dev \
+            libxrandr-dev libxi-dev libxext-dev libxtst-dev \
+            libegl1-mesa-dev libfontconfig1-dev libbsd-dev \
+            libcap-dev musl-tools
 
-      - name: Build Darling
+      - name: Build Darling (Static)
         run: |
-          # Ensure repo is up-to-date
           git submodule update --init --recursive
-          # Create a build directory
           mkdir -p build
           cd build
-          # Run Darling's official CMake build
-          cmake ..
+          # Build static binaries
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_EXE_LINKER_FLAGS="-static"
           make -j$(nproc)
 
       - name: Package binaries
         run: |
           cd build
-          tar czf darling-amd64.tar.gz bin/*
-          mv darling-amd64.tar.gz $GITHUB_WORKSPACE/
+          tar czf darling-amd64-static.tar.gz bin/*
+          mv darling-amd64-static.tar.gz $GITHUB_WORKSPACE/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: darling-amd64
-          path: darling-amd64.tar.gz
+          name: darling-amd64-static
+          path: darling-amd64-static.tar.gz
 
   release:
     needs: build
