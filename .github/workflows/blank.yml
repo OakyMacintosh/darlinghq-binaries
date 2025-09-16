@@ -32,8 +32,10 @@ jobs:
       - name: Build Darling (Dynamic)
         run: |
           cd darling
-          ./scripts/build.sh --release
-          tar czf darling-amd64-dynamic.tar.gz build/bin/*
+          mkdir build && cd build
+          cmake ..
+          cd ..
+          tar cxf darling-amd64-dynamic.tar.gz build/*
           mv darling-amd64-dynamic.tar.gz $GITHUB_WORKSPACE/
 
       # Static build
