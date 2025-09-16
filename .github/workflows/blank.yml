@@ -42,7 +42,6 @@ jobs:
           cd darling
           mkdir -p build-static
           cd build-static
-          # Force musl-gcc and static linking
           CC=musl-gcc CXX=musl-g++ LDFLAGS="-static" ../scripts/build.sh --release
           tar czf darling-amd64-static.tar.gz build/bin/*
           mv darling-amd64-static.tar.gz $GITHUB_WORKSPACE/
