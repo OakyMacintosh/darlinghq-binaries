@@ -26,18 +26,18 @@ jobs:
 
       - name: Configure build
         run: |
-          cd darling
-          mkdir -p build
-          cmake -Bbuild -H. -DCMAKE_BUILD_TYPE=Release
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
         run: |
-          cd darling/build
+          cd build
           make -j$(nproc)
 
       - name: Package binaries
         run: |
-          cd darling/build
+          cd build
           tar czf darling-amd64.tar.gz bin/*
           mv darling-amd64.tar.gz $GITHUB_WORKSPACE/
 
