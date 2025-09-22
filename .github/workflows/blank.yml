@@ -28,26 +28,38 @@ jobs:
         run: |
           git clone --recurse-submodules https://github.com/darlinghq/darling.git
 
-      # Dynamic build
-      - name: Build Darling (Dynamic)
+      # Dynamic build with custom tarball structure
+      - name: Build Darling
         run: |
+          # Change to the Darling source directory
           cd darling
+
+          # Create the build directory and run cmake/make
           mkdir build && cd build
           cmake -DTARGET_i386=OFF -DJSC_UNIFIED_BUILD=ON ..
           make -j4
           cd ..
-          tar cxf darling-amd64-dynamic.tar.gz build/*
-          mv darling-amd64-dynamic.tar.gz $GITHUB_WORKSPACE/
 
-      # Static build
-      - name: Build Darling (Static)
-        run: |
-          cd darling
-          mkdir -p build-static
-          cd build-static
-          CC=musl-gcc CXX=musl-g++ LDFLAGS="-static" ../scripts/build.sh --release
-          tar czf darling-amd64-static.tar.gz build/bin/*
-          mv darling-amd64-static.tar.gz $GITHUB_WORKSPACE/
+          # Create a temporary directory for the distribution tarball
+          mkdir darling-dist
+          
+          # Copy the dynamic libraries into the 'lib' directory
+          cp -r build/lib darling-dist/lib
+          
+          # Copy the binaries into the 'bin' directory
+          cp -r build/bin darling-dist/bin
+
+          # Create a basic install script
+          echo '#!/bin/bash' > darling-dist/install.sh
+          echo '' >> darling-dist/install.sh
+          echo '# This is a placeholder install script.' >> darling-dist/install.sh
+          echo '# Add your installation steps here, for example:' >> darling-dist/install.sh
+          echo '# sudo cp -r bin/* /usr/local/bin/' >> darling-dist/install.sh
+          echo '# sudo cp -r lib/* /usr/local/lib/' >> darling-dist/install.sh
+          echo '' >> darling-dist/install.sh
+          
+          # Create the final tarball from the new directory structure
+          tar czf "$GITHUB_WORKSPACE/darling-amd64-dynamic.tar.gz" -C . darling-dist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -55,7 +67,6 @@ jobs:
           name: darling-binaries
           path: |
             darling-amd64-dynamic.tar.gz
-            darling-amd64-static.tar.gz
 
   release:
     needs: build
